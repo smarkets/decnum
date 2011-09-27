@@ -83,8 +83,8 @@ Decnum = function(num, precision) {
         }
 
         var precision = Math.max(this._precision, x._precision),
-        a = this._force_precision(precision),
-        b = x._force_precision(precision),
+        a = this,
+        b = x,
         c = new Decnum(0, precision),
         len_new = Math.max(a._digits.length, b._digits.length),
         overflow = 0;
@@ -208,7 +208,6 @@ Decnum = function(num, precision) {
         // // Premature optimization
         // if (this._digits.length > x._digits.length)
         //     return x.mul(this);
-
         for (var ix = 0; ix < x._digits.length; ix++) {
             var d = this._mul_digit(x._digits[ix], ix);
             c = c.add(d);
@@ -251,49 +250,137 @@ Decnum = function(num, precision) {
 
 
     this.div = function (x) {
-        // Optimization: Check if x = 10 ^ N
+        // Find precision
+        var new_precision = x._digits.length;
 
+        // Copy some shit into them
+        var divsor = new Decnum(0, 0),
+        divend = new Decnum(0, 0),
+        div_digits = [];
+        divsor._digits = [];
+        divend._digits = [];
+        divsor._positive = true;
+        divend._positive = true;
+
+        for (var i = 0; i < x._digits.length; i++) {
+            divsor._digits.push(x._digits[i]);
+        }
+
+        // Eliminate leading zeroes
+        while (divsor._digits[divsor._digits.length - 1] == 0) {
+            divsor._digits.pop();
+        }
+        
+        // Add some zeroes for precision. +1 should be here
+        for (var i = 0; i < divsor._digits.length + 1; i++) {
+            div_digits.push(0);
+        }
+        
+        for (var i = 0; i < this._digits.length; i++) {
+            div_digits.push(this._digits[i]);
+        }
+
+        for (var i = div_digits.length - divsor._digits.length; i < div_digits.length; i++) {
+            divend._digits.push(div_digits[i]);
+        }
+
+        console.log(['dd', divsor.to_string(), divend.to_string(), div_digits]);
+
+        for (var i = 0; i < divsor._digits.length; i++) {
+            div_digits.pop();
+        }
+
+        var result = [];
+        // Now the algo
+        while (divend._digits.length < divsor._digits.length) { 
+            divend._digits.push(0); 
+        }
+
+
+
+        while (div_digits.length > 0) {
+            var digit = divsor._div_digit(divend);
+            result.push(digit);
+            // Przesun tempa
+            divend = divend.sub(divsor.mul(new Decnum(digit, divsor._precision)));
+            divend = divend._shift_left(1);
+            divend._digits[0] = div_digits.pop();
+            
+            // console.log(ddupa.to_string());
+        }
+
+        // Now you have to put stuff adjusting the floating point accordingly co bedzie dosc irytujace
+        var c = new Decnum(0, this._precision);
+        c._positive = (this._positive == x._positive); // Incidentally this works
+        c._digits = [];
+        for (var i = result.length - 1; i >= 0 ; i--) {
+            c._digits.push(result[i]);
+        }
+        
+        delta = this._float - divsor._digits.length;
+        console.log([result, delta]);        
+        
+        c = c._shift(delta);
+
+        while (c._digits.length <= c._float) { 
+            c._digits.push(0); 
+        }
+        return c;        
+    };
+
+
+
+    this.div_old = function (x) {
+        // Optimization: Check if x = 10 ^ N
         // Non-destructive division
         var n = x._digits.length,
         digits = [],
         result = [],
         temp = [],
+        delta = this._digits.length - x._digits.length;
         c = new Decnum(0, this._precision);
         c._positive = true;
         c._digits = [];
 
-        // Dodaj 'precision' zer na koncu x
-        for (var i = 0; i < n; i++) {
+        // Dodaj odpowiednia ilsoc zer na koncu x
+        for (var i = 0; i < x._float; i++) {
             digits.push(0);
         }
 
         for (var i = 0; i < this._digits.length; i++) {
-        // for (var i = this._digits.length - 1; i >= 0; i--) {
             digits.push(this._digits[i]);
         }
 
-        console.log(digits);
+
         // Zrob tempa
-        for (var i = digits.length - n; i < digits.length; i++) {
-            temp.push(digits[i]);
+        for (var i = digits.length - x._digits.length; i < digits.length; i++) {
+            c._digits.push(digits[i]);
         }
-        console.log(temp);
-        c._digits = temp;
-        for (var i = digits.length - n; i < digits.length; i++) {
+
+        for (var i = digits.length - x._digits.length; i < digits.length; i++) {
             digits.pop();
         }
+
+        // console.log(temp);
+        // c._digits = temp;
+        // for (var i = digits.length - n; i < digits.length; i++) {
+        //     digits.pop();
+        // }
+
 
         console.log(['zainitializuj kalku9olaccje', c.to_string()]);
 
         // Skorzystaj z algorytmu, upakuj troceh syfu w div_digit
         while (digits.length > 0) {
+
+
             var digit = x._div_digit(c);
+            console.log("fa"); 
             result.push(digit);
-
             // Przesun tempa
-            
-            c = c.sub(x.mul(new Decnum(digit, x._precision)));
 
+            c = c.sub(x.mul(new Decnum(digit, x._precision)));
+            console.log("il"); 
             c = c._shift_left(1);
             c._digits[0] = digits.pop();
             console.log(c.to_string());
@@ -312,6 +399,8 @@ Decnum = function(num, precision) {
             c._digits.push(result.pop());
         }
 
+        // Shift accordingly to x length
+
         c._positive = (this.positive == x.positive);        
         return c;
     };
@@ -319,17 +408,20 @@ Decnum = function(num, precision) {
     this._div_digit = function(x) {
         // This only works for x >= 0 
         console.log(['div dig > ', this.to_string(), x.to_string()]);
-        // console.log([this, x]);
+        console.log(['div dig > ', this, x]);
 
         if (!this._positive) {
             return this.negate()._div_digit(x);
         }
+
         var a = 0,
         b = this.BASE - 1,
         c = 0;
 
         while (a < b) {
             c = Math.floor((a + b) / 2 ) + 1;
+            console.log([a, b, c]);
+
             var t = this.mul(new Decnum(c, this._precision)).compare(x);
 
 //            if (this.mul(new Decnum(c, this._precision)).compare(x) > 0) { 
@@ -343,6 +435,7 @@ Decnum = function(num, precision) {
         console.log(['div dig < ', a]);
         return a;
     };
+
 
 
     this.to_string = function () {
@@ -386,7 +479,7 @@ Decnum = function(num, precision) {
         }
 
         // TO DO remove trailing/leading zeros?
-        if (res[0] == '.') {
+        if (res[0] == '.' || res.length == 0) {
             res = '0' + res;
         }
 
@@ -460,7 +553,6 @@ Decnum = function(num, precision) {
     // 213.98 << 2 = 21398.00
     this._shift_left = function(digs) {
         var res = this._clone();
-
         for (var i = 0; i < digs; i++) {
             res._digits.push(0);
         }
@@ -473,7 +565,7 @@ Decnum = function(num, precision) {
             res._digits[i] = 0;
         }
 
-        while (res._digits[res._digits.length - 1] == 0 && res._digits.length > a._float + 1) {
+        while (res._digits[res._digits.length - 1] == 0 && res._digits.length > res._float + 1) {
             res._digits.pop();
         }
 

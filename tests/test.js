@@ -1,6 +1,6 @@
 var nm = require('../decnum');
 
-DEFAULT_NUMTESTS = 100000;
+DEFAULT_NUMTESTS = 100;
 
 function error_msg(testname, expected, result, data) {
     msg = testname + " FAILED!\n" + "Expected: " + expected + " Result: " + result + "\n" + "Test data: " + data;
