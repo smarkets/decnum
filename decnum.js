@@ -1,6 +1,3 @@
-
-
-
 Decnum = function(num, precision) {
     // Konstruktor
     var in_data = JSON.stringify(num, precision), //quick shit
@@ -14,9 +11,9 @@ Decnum = function(num, precision) {
     BASE = Math.pow(10, DBASE),
     digits = [];
 
-    this._precision = precision;    
+    this._precision = precision;
     this._float = Math.ceil(precision / DBASE);
-    this.BASE = BASE;    
+    this.BASE = BASE;
     this.DBASE = DBASE;
     // We have to do some stupid shit to make fractional part work as expected :/
     // Fill with zeroes to have good digits in our 'base'
@@ -66,6 +63,10 @@ Decnum = function(num, precision) {
         for (var x = integer_n; x != 0; x = Math.floor(x / BASE)) {
             this._digits.push(x % BASE);
         }
+
+    while (this._digits.length <= this._float) { 
+        this._digits.push(0); 
+    }
     // }
     this._positive = num >= 0 ;
     // Konstruktor koniec
@@ -117,7 +118,7 @@ Decnum = function(num, precision) {
             } else {            //this is negative
                 return this.negate().add(x).__neg();
             }
-        } 
+        }
 
         var precision = Math.max(this._precision, x._precision);
         c = new Decnum(0, precision);
@@ -131,7 +132,7 @@ Decnum = function(num, precision) {
 
         //         } else {
         //             var b = this.negate(),
-        //             a = x.negate();                            
+        //             a = x.negate();
 
         //         }
         //     } else if (this.compare(x) < 0) {
@@ -141,7 +142,7 @@ Decnum = function(num, precision) {
         //             c._positive = !a._positive;
         //         } else {
         //             var a = this.negate(),
-        //             b = x.negate();    
+        //             b = x.negate();
 
         //         }
 
@@ -151,7 +152,7 @@ Decnum = function(num, precision) {
         // }
 
 
-        if (this._positive) {     // This actually means both numbers are positive 
+        if (this._positive) {     // This actually means both numbers are positive
             if (this.compare(x) > 0) {
                 var a = this,
                 b = x;
@@ -187,7 +188,7 @@ Decnum = function(num, precision) {
             var ad = i < a._digits.length ? a._digits[i] : 0,
             bd = i < b._digits.length ? b._digits[i] : 0;
             dif = ad - bd + overflow;
-            
+
             if (dif < 0) {
                 c._digits.push(dif + this.BASE);
                 overflow = -1;
@@ -203,22 +204,144 @@ Decnum = function(num, precision) {
     this.mul = function (x) {
         // Non-destructive multiplication
         var c = new Decnum(0, this._precision);
-        c._positive = this._positive == x._positive;
 
         // // Premature optimization
-        // if (this._digits.length > x._digits.length) 
+        // if (this._digits.length > x._digits.length)
         //     return x.mul(this);
 
-        for (var ix = 0; ix < x._digits.length(); ix++) {
-            var d = this.mul_digit(x._digits[ix], ix);
+        for (var ix = 0; ix < x._digits.length; ix++) {
+            var d = this._mul_digit(x._digits[ix], ix);
             c = c.add(d);
         }
-        
+
+        c._positive = (this._positive == x._positive);
+        c = c._shift_right(x._float);
+
+        // It's unclear whether empty digits are legal
+        while (c._digits.length <= c._float) { 
+            c._digits.push(0); 
+        }
+
         return c;
     };
 
+    this._mul_digit = function(digit, position) {
+        var c = new Decnum(0, this._precision);
+        c._positive = true;
+        c._digits = [];         // Fill with appropriate number of zeroes
+
+        for (var i = 0; i < position; i ++) {
+            c._digits.push(0);
+        }
+
+        var overflow = 0,
+        rem = 0;
+        for (var i = 0; i < this._digits.length; i++) {
+            var mul = this._digits[i] * digit + overflow;
+            rem = mul % this.BASE;
+            overflow = Math.floor(mul / this.BASE);
+            c._digits.push(rem);
+        }
+
+        if (overflow > 0)
+            c._digits.push(overflow);
+
+        return c;
+    };
+
+
     this.div = function (x) {
+        // Optimization: Check if x = 10 ^ N
+
         // Non-destructive division
+        var n = x._digits.length,
+        digits = [],
+        result = [],
+        temp = [],
+        c = new Decnum(0, this._precision);
+        c._positive = true;
+        c._digits = [];
+
+        // Dodaj 'precision' zer na koncu x
+        for (var i = 0; i < n; i++) {
+            digits.push(0);
+        }
+
+        for (var i = 0; i < this._digits.length; i++) {
+        // for (var i = this._digits.length - 1; i >= 0; i--) {
+            digits.push(this._digits[i]);
+        }
+
+        console.log(digits);
+        // Zrob tempa
+        for (var i = digits.length - n; i < digits.length; i++) {
+            temp.push(digits[i]);
+        }
+        console.log(temp);
+        c._digits = temp;
+        for (var i = digits.length - n; i < digits.length; i++) {
+            digits.pop();
+        }
+
+        console.log(['zainitializuj kalku9olaccje', c.to_string()]);
+
+        // Skorzystaj z algorytmu, upakuj troceh syfu w div_digit
+        while (digits.length > 0) {
+            var digit = x._div_digit(c);
+            result.push(digit);
+
+            // Przesun tempa
+            
+            c = c.sub(x.mul(new Decnum(digit, x._precision)));
+
+            c = c._shift_left(1);
+            c._digits[0] = digits.pop();
+            console.log(c.to_string());
+        }
+
+        console.log(['sie policzylo sie', result]);
+        // for (var i = 0; i < n; i++) {
+        //     result.pop();      
+        // }
+
+
+        c._digits = [];
+
+
+        while (result.length > 0) {
+            c._digits.push(result.pop());
+        }
+
+        c._positive = (this.positive == x.positive);        
+        return c;
+    };
+
+    this._div_digit = function(x) {
+        // This only works for x >= 0 
+        console.log(['div dig > ', this.to_string(), x.to_string()]);
+        // console.log([this, x]);
+
+        if (!this._positive) {
+            return this.negate()._div_digit(x);
+        }
+        var a = 0,
+        b = this.BASE - 1,
+        c = 0;
+
+        while (a < b) {
+            c = Math.floor((a + b) / 2 ) + 1;
+            var t = this.mul(new Decnum(c, this._precision)).compare(x);
+
+//            if (this.mul(new Decnum(c, this._precision)).compare(x) > 0) { 
+            if (t > 0) { //
+                b = c - 1;
+            } else {
+                a = c;
+            }
+        }
+
+        console.log(['div dig < ', a]);
+        return a;
     };
 
 
@@ -227,15 +350,18 @@ Decnum = function(num, precision) {
         start = this._digits.length - 1,
         leadz = true,
         floatp = false;
-        maxlen = this.BASE.toString().length - 1;       
+        maxlen = this.BASE.toString().length - 1;
         // if (this._digits.length - 1 < this._float) {
         //     res += "0.";
         // }
 
+        // Zero-length zero is a bug in multiplication
+        if (this._digits.length == 0) return '0';
+
 
         for (var i = this._digits.length - 1; i >= 0; i--) {
             if (i == this._float - 1) {
-                res += ".";                
+                res += ".";
                 floatp = true;
             }
 
@@ -247,11 +373,11 @@ Decnum = function(num, precision) {
                 }
             } else {
                 if (chunk == 0 && leadz) {
-                   continue; 
+                   continue;
                 } else {
                     while(chunk.length < maxlen && !leadz) {
                         chunk = "0" + chunk;
-                    }                    
+                    }
                 }
             }
             // console.log([chunk + "|", leadz, floatp]);
@@ -262,7 +388,7 @@ Decnum = function(num, precision) {
         // TO DO remove trailing/leading zeros?
         if (res[0] == '.') {
             res = '0' + res;
-        } 
+        }
 
         // There is some problem with 'negative zero' atm
         if (!this._positive && (this.compare((new Decnum(0, this._precision)).__neg()) != 0)) res = "-" + res;
@@ -330,7 +456,7 @@ Decnum = function(num, precision) {
 
         return res;
     };
-    
+
     // 213.98 << 2 = 21398.00
     this._shift_left = function(digs) {
         var res = this._clone();
@@ -347,9 +473,13 @@ Decnum = function(num, precision) {
             res._digits[i] = 0;
         }
 
+        while (res._digits[res._digits.length - 1] == 0 && res._digits.length > a._float + 1) {
+            res._digits.pop();
+        }
+
         return res;
     };
-    
+
     this.compare = function(x) {
         // First signs
         if (this._positive != x._positive) {
@@ -362,9 +492,9 @@ Decnum = function(num, precision) {
 
             if (this._digits.length != x._digits.length) {
                 if (this._digits.length > x._digits.length) {
-                    return this._positive ? 1 : -1;                    
+                    return this._positive ? 1 : -1;
                 } else {
-                    return this._positive ? -1 : 1;                    
+                    return this._positive ? -1 : 1;
                 }
             }
 
@@ -381,7 +511,7 @@ Decnum = function(num, precision) {
     };
 
 
-    
+
 };
 
 
