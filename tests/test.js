@@ -1,12 +1,16 @@
 var nm = require('../decnum');
 
-DEFAULT_NUMTESTS = 100;
+DEFAULT_NUMTESTS = 100000;
 
 function error_msg(testname, expected, result, data) {
     msg = testname + " FAILED!\n" + "Expected: " + expected + " Result: " + result + "\n" + "Test data: " + data;
     return msg;
 }
 
+function almost_equal(x, y) {
+    var epsilon = 0.01;
+    return Math.abs(parseFloat(x) - parseFloat(y)) < epsilon;
+}
 
 exports.test_creation = function(test) {
     var PRECISION = 4,
@@ -117,11 +121,6 @@ exports.test_subtraction = function(test) {
     test.done();
 };
 
-function almost_equal(x, y) {
-    var epsilon = 0.01;
-    return Math.abs(parseFloat(x) - parseFloat(y)) < epsilon;
-}
-
 exports.test_multiplication = function(test) {
     var PRECISION = 4,
     NUMTESTS = DEFAULT_NUMTESTS;
@@ -146,4 +145,30 @@ exports.test_multiplication = function(test) {
     test.done();
 };
 
-// Todo test shifting
+
+
+exports.test_division = function(test) {
+    var PRECISION = 4,
+    NUMTESTS = DEFAULT_NUMTESTS;
+    test.expect(NUMTESTS);
+    for (var i = 0; i < NUMTESTS; i++) {
+        // Get some random number
+        var a = Math.random() * 1000,
+        b = Math.random() * 1000,
+        a = Math.round(a * PRECISION) / PRECISION * (Math.random() > 0.5 ? 1 : -1),
+        b = Math.round(b * PRECISION) / PRECISION * (Math.random() > 0.5 ? 1 : -1);
+        if (b == 0) b = 1;
+        // console.log([a,b]);
+        var expected = a / b,
+        aN = new nm.Decnum(a, PRECISION),
+        bN = new nm.Decnum(b, PRECISION),
+        result = aN.div(bN).to_string();
+        // Leave only
+        // console.log("ok");
+        test.ok(almost_equal(expected, result), error_msg("multiplication", expected, result, [a, b]));
+    }
+
+    test.done();
+};
+
+// Possibly add some other tests here in the future
