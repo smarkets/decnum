@@ -165,7 +165,7 @@ exports.test_division = function(test) {
         result = aN.div(bN).to_string();
         // Leave only
         // console.log("ok");
-        test.ok(almost_equal(expected, result), error_msg("multiplication", expected, result, [a, b]));
+        test.ok(almost_equal(expected, result), error_msg("division", expected, result, [a, b]));
     }
 
     test.done();

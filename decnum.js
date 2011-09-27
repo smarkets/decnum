@@ -7,7 +7,7 @@ Decnum = function(num, precision) {
     integer_s = Math.abs(parts[0]),
     fractional_n = fractional_s ? parseInt(fractional_s) : 0,
     integer_n = parseInt(integer_s),
-    DBASE = 4,
+    DBASE = 2,
     BASE = Math.pow(10, DBASE),
     digits = [];
 
@@ -19,7 +19,6 @@ Decnum = function(num, precision) {
     // Fill with zeroes to have good digits in our 'base'
     // fractional_n *= Math.pow(10, fractional_s.length % DBASE);
 
-
     while (fractional_s.length % DBASE) {
         fractional_s = fractional_s + '0';
     }
@@ -29,6 +28,7 @@ Decnum = function(num, precision) {
     }
 
     // Shift
+    // This thing desperately needs refactoring
     var delta = this._float - digits.length;
 
     if (delta < 0) {
@@ -57,20 +57,20 @@ Decnum = function(num, precision) {
 
     this._digits = digits;
 
-    // if (integer_n == 0){
-    //     this._digits.push(0);
-    // } else {
-        for (var x = integer_n; x != 0; x = Math.floor(x / BASE)) {
-            this._digits.push(x % BASE);
-        }
+    for (var x = integer_n; x != 0; x = Math.floor(x / BASE)) {
+        this._digits.push(x % BASE);
+    }
 
     while (this._digits.length <= this._float) {
         this._digits.push(0);
     }
-    // }
-    this._positive = num >= 0 ;
-    // Konstruktor koniec
 
+    this._positive = num >= 0 ;
+
+    ////////////
+    // Konstruktor koniec
+    ////////////
+   
     // Arithmetics
     this.add = function (x) {
         // Non-destructive add operation
@@ -122,8 +122,6 @@ Decnum = function(num, precision) {
 
         var precision = Math.max(this._precision, x._precision);
         c = new Decnum(0, precision);
-
-
 
         if (this._positive) {     // both are positive
             if (this.compare(x) > 0) {
@@ -184,7 +182,7 @@ Decnum = function(num, precision) {
         }
 
         c._positive = (this._positive == x._positive);
-        c = c._shift_right(x._float);
+        c.__shift(-x._float);
 
         // It's unclear whether empty digits are legal
         while (c._digits.length <= c._float) {
@@ -218,9 +216,8 @@ Decnum = function(num, precision) {
         return c;
     };
 
-
     this.div = function (x) {
-        // Optimize against special cases like dividing by 10
+        // Optimize against special cases like dividing by 10?
         // Find precision
         var new_precision = x._digits.length;
 
@@ -255,7 +252,6 @@ Decnum = function(num, precision) {
             divend._digits.push(div_digits[i]);
         }
 
-
         for (var i = 0; i < divsor._digits.length; i++) {
             div_digits.pop();
         }
@@ -270,11 +266,12 @@ Decnum = function(num, precision) {
             var digit = divsor._div_digit(divend);
             result.push(digit);
             // Przesun tempa
-            divend = divend.sub(divsor.mul(new Decnum(digit, divsor._precision)));
-            divend = divend._shift(1);
+
+            divend.__div_submul(divsor, digit); //Equivalent to, replaced for speed:
+            // divend = divend.sub(divsor.mul(new Decnum(digit, divsor._precision)));
+            divend.__shift(1);
             divend._digits[0] = div_digits.pop();
 
-            // console.log(ddupa.to_string());
         }
 
         // Now you have to put stuff adjusting the floating point accordingly co bedzie dosc irytujace
@@ -287,7 +284,7 @@ Decnum = function(num, precision) {
 
         delta = this._float - divsor._digits.length;
 
-        c = c._shift(delta);
+        c.__shift(delta);
 
         while (c._digits.length <= c._float) {
             c._digits.push(0);
@@ -296,8 +293,8 @@ Decnum = function(num, precision) {
     };
 
     this._div_digit = function(x) {
+        // Util for division
         // This only works for x >= 0
-
 
         if (!this._positive) {
             return this.negate()._div_digit(x);
@@ -318,11 +315,47 @@ Decnum = function(num, precision) {
             }
         }
 
-
         return a;
     };
 
+    // This function is meant *only* to be used inside division to make it a little bit faster
+    this.__div_submul = function (divsor, digit) {
+        var temp = [],
+        overflow_mul = 0,
+        overflow_sub = 0;
 
+        for (var i = 0; i < divsor._digits.length; i++) {
+            var mul_res = divsor._digits[i] * digit + overflow_mul,
+            digit_mul = mul_res % divsor.BASE,
+            overflow_mul = Math.floor(mul_res / divsor.BASE),
+            digit_sub = (this._digits[i] ? this._digits[i] : 0) + overflow_sub - digit_mul;
+            if (digit_sub < 0) {
+                overflow_sub = -1;
+                digit_sub += this.BASE;
+            } else {
+                overflow_sub = 0;
+            }
+
+            this._digits[i] = digit_sub;
+        }
+        // "Unroll"
+
+        var index = divsor._digits.length,
+        digit_sub = (this._digits[index] ? this._digits[index] : 0) + overflow_sub - overflow_mul;
+
+        if (digit_sub < 0) {
+            overflow_sub = -1;
+            digit_sub += this.BASE;
+        } else {
+            overflow_sub = 0;
+        }
+
+        this._digits[index] = digit_sub;
+
+        while (!(this._digits[this._digits.length - 1]) && this._digits.length > 1) {
+            this._digits.pop();
+        };
+    };
 
     this.to_string = function () {
         var res = "",
@@ -411,14 +444,14 @@ Decnum = function(num, precision) {
         res._positive = !res._positive;
         return res;
     };
-    
+
     //// Internal stuff - nondestructive functions
 
     this._clone = function() {
         var res = new Decnum(0, this._precision);
         res._digits = this._digits.slice(0);
         res._float = this._float;
-        res._positive = this._positive;        
+        res._positive = this._positive;
 
         return res;
     };
@@ -484,7 +517,6 @@ Decnum = function(num, precision) {
         return res;
     };
 
-
     this.isZero = function() {
         for (var i = 0; i < this._digits.length; i++) {
             if (this._digits[i] != 0) {
@@ -494,7 +526,7 @@ Decnum = function(num, precision) {
 
         return true;
     };
-    
+
     //// Internal stuff - destructive functions
 
     this.__neg = function() {
@@ -507,35 +539,35 @@ Decnum = function(num, precision) {
     // Negative right
     this.__shift = function(delta) {
         if (delta < 0) {
-            delta *= -1;
+            var delt = -delta;
 
-            for (var i = 0; i < this._digits.length - digs; i++) {
-                this._digits[i] = this._digits[i + digs];
+            for (var i = 0; i < this._digits.length - delt; i++) {
+                this._digits[i] = this._digits[i + delt];
             }
 
-            for (var i = 0; i < digs; i++) {
+            for (var i = 0; i < delt; i++) {
                 this._digits.pop();
             }
         }
 
         if (delta > 0) {
-            for (var i = 0; i < digs; i++) {
+            for (var i = 0; i < delta; i++) {
                 this._digits.push(0);
             }
 
-            for (var i = this._digits.length - 1; i >= digs; i--) {
-                this._digits[i] = this._digits[i - digs];
+            for (var i = this._digits.length - 1; i >= delta; i--) {
+                this._digits[i] = this._digits[i - delta];
             }
 
-            for (var i = digs - 1; i >= 0; i--) {
+            for (var i = delta - 1; i >= 0; i--) {
                 this._digits[i] = 0;
             }
-
-            while (this._digits[this._digits.length - 1] == 0 && this._digits.length > this._float + 1) {
-                this._digits.pop();
-            }
         }
-        
+
+        while (this._digits[this._digits.length - 1] == 0 && this._digits.length > this._float + 1) {
+            this._digits.pop();
+        }
+
         return this;
     };
 
