@@ -19,7 +19,7 @@ function Decnum(num, precision) {
             this._digits = num._digits.slice(0);
         }
     } else {
-        var in_data = num + '',
+        var in_data = num.toString(),
         parts = in_data.split("."),
         prec = Math.ceil(precision / DBASE),
         fractional_s = parts[1] ? parts[1] : "",
@@ -28,7 +28,6 @@ function Decnum(num, precision) {
         digits = [];
         this.BASE = BASE;
         this.DBASE = DBASE;
-
         // Filling the fractional part with zeroes
         while (fractional_s.length < this._float * DBASE) {
             fractional_s = fractional_s + '0';
@@ -53,6 +52,10 @@ function Decnum(num, precision) {
         }
 
         this._positive = num >= 0 ;
+    }
+
+    if (this._precision > 0) {
+        this._digits[0] = this._digits[0] - (this._digits[0] % Math.pow(10, this.DBASE - this._precision % this.DBASE));
     }
 };
 //// Arithmetics
@@ -176,7 +179,11 @@ Decnum.prototype.mul = function (x) {
     while (c._digits.length <= c._float) {
         c._digits.push(0);
     }
+    // Make sure precision didn't 'increase'
 
+    if (c._precision > 0) {
+        c._digits[0] = c._digits[0] - (c._digits[0] % Math.pow(10, c.DBASE - c._precision % c.DBASE));
+    }
     return c;
 };
 Decnum.prototype.mod = function (x) {
@@ -263,6 +270,11 @@ Decnum.prototype.div = function (x) {
 
     while (c._digits.length <= c._float) {
         c._digits.push(0);
+    }
+
+    // Make sure precision didn't 'increase'
+    if (c._precision > 0) {
+        c._digits[0] = c._digits[0] - (c._digits[0] % Math.pow(10, c.DBASE - c._precision % c.DBASE));
     }
     return c;
 };
@@ -555,13 +567,13 @@ Decnum.prototype._shift_left = function(digs) {
 };
 
 Decnum.prototype.isZero = function() {
-    for (var i = 0; i < this._digits.length; i++) {
+    for (var i = 1; i < this._digits.length; i++) {
         if (this._digits[i] != 0) {
             return false;
         };
     }
-
-    return true;
+    
+    return (this._digits[0] < Math.pow(10, this.DBASE - this._precision % this.DBASE));
 };
 
 
