@@ -1,7 +1,7 @@
-Decnum = function(num, precision) {
+var Decnum = function(num, precision) {
     //// Constructor
     var DBASE = 4,
-    BASE = Math.pow(10, DBASE),
+    BASE = Math.pow(10, DBASE);
     precision = (precision != undefined) ? precision : DBASE;
 
     this._precision = precision;
@@ -13,10 +13,10 @@ Decnum = function(num, precision) {
         this.DBASE = num.DBASE;
 
         if (this._float != num._float) {
-            delta = (this._float - num._float);
+            var delta = (this._float - num._float);
             this._digits = num._shift(delta)._digits;
         } else {
-            this._digits = num._digits.slice(0);   
+            this._digits = num._digits.slice(0);
         }
     } else {
         var in_data = num + '',
@@ -54,7 +54,7 @@ Decnum = function(num, precision) {
 
         this._positive = num >= 0 ;
     }
-    
+
 
     //// Constructor ends here
 
@@ -81,9 +81,9 @@ Decnum = function(num, precision) {
 
         for (var i = 0; i < len_new; i++) {
             var ad = i < this._digits.length ? this._digits[i] : 0,
-            bd = i < x._digits.length ? x._digits[i] : 0;
-            sum = ad + bd + overflow,
-            digit = sum % this.BASE;
+                bd = i < x._digits.length ? x._digits[i] : 0,
+                sum = ad + bd + overflow,
+                digit = sum % this.BASE;
 
             overflow = Math.floor(sum / this.BASE);
             c._digits.push(digit);
@@ -110,8 +110,8 @@ Decnum = function(num, precision) {
             }
         }
 
-        var precision = Math.max(this._precision, x._precision);
-        c = new Decnum(0, precision);
+        var precision = Math.max(this._precision, x._precision),
+            c = new Decnum(0, precision);
 
         if (this._positive) {     // both are positive
             if (this.compare(x) > 0) {
@@ -129,11 +129,11 @@ Decnum = function(num, precision) {
         } else {                // both are negative
             if (this.compare(x) > 0) {
                 var a = x.negate(),
-                b = this.negate();
+                    b = this.negate();
                 c._positive = true;
             } else if (this.compare(x) < 0) {
                 var a = this.negate(),
-                b = x.negate();
+                    b = x.negate();
                 c._positive = false;
             } else {            // this == x
                 c._positive = true;
@@ -147,8 +147,8 @@ Decnum = function(num, precision) {
 
         for (var i = 0; i < len_new; i++) {
             var ad = i < a._digits.length ? a._digits[i] : 0,
-            bd = i < b._digits.length ? b._digits[i] : 0;
-            dif = ad - bd + overflow;
+                bd = i < b._digits.length ? b._digits[i] : 0,
+                dif = ad - bd + overflow;
 
             if (dif < 0) {
                 c._digits.push(dif + this.BASE);
@@ -328,10 +328,10 @@ Decnum = function(num, precision) {
     // Returns string representation
     this.to_string = function () {
         var res = "",
-        start = this._digits.length - 1,
-        leadz = true,
-        floatp = false;
-        maxlen = this.BASE.toString().length - 1;
+            start = this._digits.length - 1,
+            leadz = true,
+            floatp = false,
+            maxlen = this.BASE.toString().length - 1;
 
         if (this._digits.length == 0) return '0';
 
@@ -384,13 +384,13 @@ Decnum = function(num, precision) {
         }
 
         var res = new Decnum(1, this._precision);
-        
+
         for (var i = 0; i < x; i++) {
             res = res.mul(this);
         }
 
         return res;
-    }
+    };
 
     // This does nothing and is added for compatibility with old broken bignums
     this.round = function () {
@@ -458,14 +458,15 @@ Decnum = function(num, precision) {
     // Another util for division, this one is destructive.
     this.__div_submul = function (divsor, digit) {
         var temp = [],
-        overflow_mul = 0,
-        overflow_sub = 0;
+            overflow_mul = 0,
+            overflow_sub = 0;
 
         for (var i = 0; i < divsor._digits.length; i++) {
             var mul_res = divsor._digits[i] * digit + overflow_mul,
-            digit_mul = mul_res % divsor.BASE,
-            overflow_mul = Math.floor(mul_res / divsor.BASE),
-            digit_sub = (this._digits[i] ? this._digits[i] : 0) + overflow_sub - digit_mul;
+                digit_mul = mul_res % divsor.BASE,
+                digit_sub = (this._digits[i] ? this._digits[i] : 0) + overflow_sub - digit_mul;
+            overflow_mul = Math.floor(mul_res / divsor.BASE);
+
             if (digit_sub < 0) {
                 overflow_sub = -1;
                 digit_sub += this.BASE;
@@ -478,7 +479,7 @@ Decnum = function(num, precision) {
         // "Unroll"
 
         var index = divsor._digits.length,
-        digit_sub = (this._digits[index] ? this._digits[index] : 0) + overflow_sub - overflow_mul;
+            digit_sub = (this._digits[index] ? this._digits[index] : 0) + overflow_sub - overflow_mul;
 
         if (digit_sub < 0) {
             overflow_sub = -1;
@@ -533,7 +534,7 @@ Decnum = function(num, precision) {
     this._shift_right = function(digs) {
         var res = this._clone();
 
-        for (var i = 0; i < res._digits.length - digs; i++) {
+        for (var i = 0, j = (res._digits.length - digs); i < j; i++) {
             res._digits[i] = res._digits[i + digs];
         }
 
