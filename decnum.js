@@ -1,45 +1,60 @@
 Decnum = function(num, precision) {
     //// Constructor
-
-    var in_data = num + '',
-    parts = in_data.split("."),
-    prec = Math.ceil(precision / DBASE),
-    fractional_s = parts[1] ? parts[1] : "",
-    integer_s = Math.abs(parts[0]),
-    integer_n = parseInt(integer_s),
-    DBASE = 4,
+    var DBASE = 4,
     BASE = Math.pow(10, DBASE),
-    digits = [];
+    precision = (precision != undefined) ? precision : DBASE;
 
-    this._precision = precision ? precision : DBASE;
+    this._precision = precision;
     this._float = Math.ceil(precision / DBASE);
-    this.BASE = BASE;
-    this.DBASE = DBASE;
 
-    // Filling the fractional part with zeroes
-    while (fractional_s.length < this._float * DBASE) {
-        fractional_s = fractional_s + '0';
+    if (num instanceof Decnum) {
+        this._positive = num._positive;
+        this.BASE = num.BASE;
+        this.DBASE = num.DBASE;
+
+        if (this._float != num._float) {
+            delta = (this._float - num._float);
+            this._digits = num._shift(delta)._digits;
+        } else {
+            this._digits = num._digits.slice(0);   
+        }
+    } else {
+        var in_data = num + '',
+        parts = in_data.split("."),
+        prec = Math.ceil(precision / DBASE),
+        fractional_s = parts[1] ? parts[1] : "",
+        integer_s = Math.abs(parts[0]),
+        integer_n = parseInt(integer_s),
+        digits = [];
+        this.BASE = BASE;
+        this.DBASE = DBASE;
+
+        // Filling the fractional part with zeroes
+        while (fractional_s.length < this._float * DBASE) {
+            fractional_s = fractional_s + '0';
+        }
+
+        fractional_s = fractional_s.slice(0, this._float * DBASE);
+
+        for (var i = fractional_s.length; i >= DBASE; i -= DBASE) {
+            digits.push(parseInt(fractional_s.slice(i - DBASE, i), 10));
+
+            if (digits.length == this._float) break;
+        }
+
+        this._digits = digits;
+
+        for (var x = integer_n; x != 0; x = Math.floor(x / BASE)) {
+            this._digits.push(x % BASE);
+        }
+
+        while (this._digits.length <= this._float) {
+            this._digits.push(0);
+        }
+
+        this._positive = num >= 0 ;
     }
-
-    fractional_s = fractional_s.slice(0, this._float * DBASE);
-
-    for (var i = fractional_s.length; i >= DBASE; i -= DBASE) {
-        digits.push(parseInt(fractional_s.slice(i - DBASE, i), 10));
-
-        if (digits.length == this._float) break;
-    }
-
-    this._digits = digits;
-
-    for (var x = integer_n; x != 0; x = Math.floor(x / BASE)) {
-        this._digits.push(x % BASE);
-    }
-
-    while (this._digits.length <= this._float) {
-        this._digits.push(0);
-    }
-
-    this._positive = num >= 0 ;
+    
 
     //// Constructor ends here
 
@@ -185,10 +200,8 @@ Decnum = function(num, precision) {
         }
 
         // Find precision
-        var new_precision = x._digits.length;
-
-        // Copy some shit into them
-        var divsor = new Decnum(0, 0),
+        var new_precision = x._digits.length,
+        divsor = new Decnum(0, 0),
         divend = new Decnum(0, 0),
         div_digits = [];
         divsor._digits = [];
@@ -364,11 +377,29 @@ Decnum = function(num, precision) {
         return this._positive ? this._clone() : this.negate();
     };
 
+    // Exponentation, unfortunately it works only for positive integers
+    this.pow = function(x) {
+        if (Math.floor(x) != x || x < 0) {
+            throw new Error("Exponentation doesn't know how to handle this exponent");
+        }
+
+        var res = new Decnum(1, this._precision);
+        
+        for (var i = 0; i < x; i++) {
+            res = res.mul(this);
+        }
+
+        return res;
+    }
+
     // This does nothing and is added for compatibility with old broken bignums
     this.round = function () {
-        return this;
+        return this._clone();
     };
 
+    this.is_negative = function () {
+        return this.isZero() || !(this._positive);
+    };
 
     //// 'Private' functions start here - ie those you won't probably need
     //// Functions starting with one underscore are non-destructive,
@@ -588,16 +619,19 @@ Decnum = function(num, precision) {
         return this;
     };
 
-
+    this.valueOf = this.to_string;
+    this.toString = this.to_string;
+    this.subtract = this.sub;
+    this.divide = this.div;
+    this.multiply = this.mul;
+    this.intPart = this.int_part;
 };
 
 // Added for compatibility with old code
-Decnum.prototype.valueOf = Decnum.prototype.to_string;
-Decnum.prototype.toString = Decnum.prototype.to_string;
-Decnum.prototype.subtract = Decnum.prototype.sub;
-Decnum.prototype.divide = Decnum.prototype.div;
-Decnum.prototype.multiply = Decnum.prototype.mul;
-Decnum.prototype.intPart = Decnum.prototype.int_part;
+Decnum.clone = function(x) {
+    return x._clone();
+};
+
 
 // Exporting so
 if (typeof(module) != 'undefined' && 'exports' in module) {
