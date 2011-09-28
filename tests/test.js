@@ -1,6 +1,6 @@
 var nm = require('../decnum');
 
-DEFAULT_NUMTESTS = 100000;
+DEFAULT_NUMTESTS = 100;
 
 function error_msg(testname, expected, result, data) {
     msg = testname + " FAILED!\n" + "Expected: " + expected + " Result: " + result + "\n" + "Test data: " + data;
@@ -61,12 +61,12 @@ exports.test_comparison = function(test) {
         bN = new nm.Decnum(b, PRECISION),
         result = aN.compare(bN);
 
-        test.ok(expected == result, "expected: " + expected + " got: " + result + " test data: " + a + " " + b);
+        test.ok(expected == result, error_msg("comparison", expected, result, [a, b]));
     }
 
 
     test.done();
-}
+};
 
 
 exports.test_addition = function(test) {
@@ -76,7 +76,7 @@ exports.test_addition = function(test) {
     test.expect(NUMTESTS);
 
     for (var i = 0; i < NUMTESTS; i++) {
-        // Get some random number
+
         var a = Math.random() * 1000,
         b = Math.random() * 1000,
         a = Math.round(a * PRECISION) / PRECISION * (Math.random() > 0.5 ? 1 : -1),
@@ -84,12 +84,11 @@ exports.test_addition = function(test) {
         t = ((a + b) + "").split("."),
         intp = t[0],
         frcp = t[1] ? t[1] + "0000" : "0000",
-        x = (new nm.Decnum(a, PRECISION)).add(new nm.Decnum(b, PRECISION)),
-        z = intp + "." + frcp.slice(0, 4);
+        result = (new nm.Decnum(a, PRECISION)).add(new nm.Decnum(b, PRECISION)).to_string(),
+        expected = intp + "." + frcp.slice(0, 4);
 
         // Leave only
-        test.ok(z == x.to_string(), "expected: " + z  + " got: " + x.to_string() + " root: " + a.toString()+ " " + b.toString());
-
+        test.ok(expected == result, error_msg("addition", expected, result, [a, b]));
     }
     test.done();
 };
@@ -110,12 +109,12 @@ exports.test_subtraction = function(test) {
         var t = ((a - b) + "").split("."),
         intp = t[0],
         frcp = t[1] ? t[1] + "0000" : "0000",
-        x = (new nm.Decnum(a, PRECISION)).sub(new nm.Decnum(b, PRECISION)),
-        z = intp + "." + frcp.slice(0, 4);
+        result = (new nm.Decnum(a, PRECISION)).sub(new nm.Decnum(b, PRECISION)).to_string(),
+        expected = intp + "." + frcp.slice(0, 4);
 
         // Leave only
         // console.log("ok");
-        test.ok(z == x.to_string(), "expected: " + (a - b)  + " got: " + x.to_string() + " root: " + a.toString()+ " " + b.toString());
+        test.ok(expected == result, error_msg("subtraction", expected, result, [a, b]));
 
     }
     test.done();
@@ -152,19 +151,16 @@ exports.test_division = function(test) {
     NUMTESTS = DEFAULT_NUMTESTS;
     test.expect(NUMTESTS);
     for (var i = 0; i < NUMTESTS; i++) {
-        // Get some random number
         var a = Math.random() * 1000,
         b = Math.random() * 1000,
         a = Math.round(a * PRECISION) / PRECISION * (Math.random() > 0.5 ? 1 : -1),
         b = Math.round(b * PRECISION) / PRECISION * (Math.random() > 0.5 ? 1 : -1);
         if (b == 0) b = 1;
-        // console.log([a,b]);
         var expected = a / b,
         aN = new nm.Decnum(a, PRECISION),
         bN = new nm.Decnum(b, PRECISION),
         result = aN.div(bN).to_string();
-        // Leave only
-        // console.log("ok");
+
         test.ok(almost_equal(expected, result), error_msg("division", expected, result, [a, b]));
     }
 
