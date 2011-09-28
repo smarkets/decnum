@@ -1,6 +1,6 @@
 var nm = require('../decnum');
 
-DEFAULT_NUMTESTS = 100;
+DEFAULT_NUMTESTS = 10000;
 
 function error_msg(testname, expected, result, data) {
     msg = testname + " FAILED!\n" + "Expected: " + expected + " Result: " + result + "\n" + "Test data: " + data;
@@ -155,7 +155,7 @@ exports.test_division = function(test) {
         b = Math.random() * 1000,
         a = Math.round(a * PRECISION) / PRECISION * (Math.random() > 0.5 ? 1 : -1),
         b = Math.round(b * PRECISION) / PRECISION * (Math.random() > 0.5 ? 1 : -1);
-        if (b == 0) b = 1;
+        if (Math.abs(b) < 0.001) b = 1;
         var expected = a / b,
         aN = new nm.Decnum(a, PRECISION),
         bN = new nm.Decnum(b, PRECISION),

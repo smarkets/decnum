@@ -35,28 +35,40 @@ function Decnum(num, precision) {
 
         fractional_s = fractional_s.slice(0, this._float * DBASE);
 
-        for (var i = fractional_s.length; i >= DBASE; i -= DBASE) {
-            digits.push(parseInt(fractional_s.slice(i - DBASE, i), 10));
+        var fractional_len = this._float,
+        integer_len = Math.max(0, Math.ceil(Math.log(integer_n) / Math.log(BASE))),
+        ind = 0;
 
-            if (digits.length == this._float) break;
+
+        this._digits = new Array(fractional_len + integer_len);
+
+        for (var i = fractional_s.length; i >= DBASE; i -= DBASE) {
+            // digits.push(parseInt(fractional_s.slice(i - DBASE, i), 10));
+            this._digits[ind] = parseInt(fractional_s.slice(i - DBASE, i), 10);
+            ind++;
+            if (ind == this._float) break;
         }
 
-        this._digits = digits;
 
         for (var x = integer_n; x != 0; x = Math.floor(x / BASE)) {
-            this._digits.push(x % BASE);
+            this._digits[ind] = (x % BASE);
+            ind++;
         }
 
-        while (this._digits.length <= this._float) {
-            this._digits.push(0);
-        }
+        // // I don't think i need it 
+        // while (this._digits.length <= this._float) {
+        //     this._digits.push(0);
+        // }
 
         this._positive = num >= 0 ;
     }
 
-    if (this._precision > 0) {
+
+    if (this._precision > 0 && (0 != this._precision % this.DBASE)) {
         this._digits[0] = this._digits[0] - (this._digits[0] % Math.pow(10, this.DBASE - this._precision % this.DBASE));
     }
+
+
 };
 //// Arithmetics
 Decnum.prototype.add = function(x) {
@@ -76,7 +88,7 @@ Decnum.prototype.add = function(x) {
     c = new Decnum(0, precision),
     len_new = Math.max(this._digits.length, x._digits.length),
     overflow = 0;
-    c._digits = [];
+    c._digits = new Array(len_new);
 
     for (var i = 0; i < len_new; i++) {
         var ad = i < this._digits.length ? this._digits[i] : 0,
@@ -85,7 +97,7 @@ Decnum.prototype.add = function(x) {
             digit = sum % this.BASE;
 
         overflow = Math.floor(sum / this.BASE);
-        c._digits.push(digit);
+        c._digits[i] = digit;
     }
 
     if (overflow > 0) {
@@ -142,7 +154,7 @@ Decnum.prototype.sub = function (x) {
 
     var len_new = Math.max(a._digits.length, b._digits.length),
     overflow = 0;
-    c._digits = [];
+    c._digits = new Array(len_new);
 
     for (var i = 0; i < len_new; i++) {
         var ad = i < a._digits.length ? a._digits[i] : 0,
@@ -150,10 +162,10 @@ Decnum.prototype.sub = function (x) {
             dif = ad - bd + overflow;
 
         if (dif < 0) {
-            c._digits.push(dif + this.BASE);
+            c._digits[i] = (dif + this.BASE);
             overflow = -1;
         } else {
-            c._digits.push(dif);
+            c._digits[i] = (dif);
             overflow = 0;
         }
     }
@@ -181,7 +193,7 @@ Decnum.prototype.mul = function (x) {
     }
     // Make sure precision didn't 'increase'
 
-    if (c._precision > 0) {
+    if (c._precision > 0 && (0 != (c._precision % c.DBASE))) {
         c._digits[0] = c._digits[0] - (c._digits[0] % Math.pow(10, c.DBASE - c._precision % c.DBASE));
     }
     return c;
@@ -200,6 +212,8 @@ Decnum.prototype.div = function (x) {
     x = this.coerce_num(x);
 
     if (x.isZero()) {
+        console.log([this, x]);
+        console.log([this.toString(), x.toString()]);
         throw new Error("Division by 0");
     }
 
@@ -273,7 +287,8 @@ Decnum.prototype.div = function (x) {
     }
 
     // Make sure precision didn't 'increase'
-    if (c._precision > 0) {
+
+    if (c._precision > 0 && (0 != (c._precision % c.DBASE))) {
         c._digits[0] = c._digits[0] - (c._digits[0] % Math.pow(10, c.DBASE - c._precision % c.DBASE));
     }
     return c;
@@ -408,12 +423,14 @@ Decnum.prototype.is_negative = function () {
 
 Decnum.prototype._mul_digit = function(digit, position) {
     // Util for multiplication
-    var c = new Decnum(0, this._precision);
+    var c = new Decnum(0, this._precision),
+    ind = 0;
     c._positive = true;
-    c._digits = [];         // Fill with appropriate number of zeroes
+    c._digits = new Array(position + this._digits.length);         // Fill with appropriate number of zeroes
 
     for (var i = 0; i < position; i ++) {
-        c._digits.push(0);
+        c._digits[ind] = (0);
+        ind++;
     }
 
     var overflow = 0,
@@ -422,7 +439,8 @@ Decnum.prototype._mul_digit = function(digit, position) {
         var mul = this._digits[i] * digit + overflow;
         rem = mul % this.BASE;
         overflow = Math.floor(mul / this.BASE);
-        c._digits.push(rem);
+        c._digits[ind] = (rem);
+        ind++;
     }
 
     if (overflow > 0)
@@ -573,7 +591,10 @@ Decnum.prototype.isZero = function() {
         };
     }
     
-    return (this._digits[0] < Math.pow(10, this.DBASE - this._precision % this.DBASE));
+    if (0 != (this._precision % this.DBASE)) {
+        return (this._digits[0] < Math.pow(10, this.DBASE - this._precision % this.DBASE));        
+    }
+    return (this._digits[0] == 0);
 };
 
 
