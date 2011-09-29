@@ -7,6 +7,9 @@ function Decnum(num, precision) {
     this._precision = precision;
     this._float = Math.ceil(precision / DBASE);
 
+    if (typeof(num) == 'undefined') {
+        num = 0;
+    }
     if (num instanceof Decnum) {
         this._positive = num._positive;
         this.BASE = num.BASE;
