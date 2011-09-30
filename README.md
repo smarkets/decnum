@@ -7,7 +7,14 @@ Decnum is a pure-Javascript library for handling large integers with arbitrary p
 Usage and examples
 ==================
 
-Creation and basic usage:
+> x = new Decnum(1.2, 2)
+> y = new Decnum('0002.1499900', 2)
+> z = new Decnum(-5, 4)
+> a = x.add(y)
+> b = y.mul(z)
+> [x.toString(), y.toString(), z.toString(), a.toString(), b.toString()]
+[ '1.20', '2.14', '-5.0000', '3.34', '10.70' ]
+
 
 To create use new Decnum(number, precision) - where number is number from which you want to create a decnum. This could be string, int, float or another decnum. To see contents use method toString or valueOf (both of them do exactly the same).
 
@@ -22,10 +29,10 @@ To create use new Decnum(number, precision) - where number is number from which 
 
 Arithmetics:
 
-All operations are non-destructive. Ie arguments are not affected, and new decnum is returned. The argument passed to operation doesn't have to be a decnum.
+All operations are non-destructive (ie arguments are not affected, and new decnum is returned). The argument passed to operation can be either a Decnum, string, float or int
 
 > x = new Decnum(0.7, 2)
-> y = new Decnum(1.3, 2)
+> y = new Decnum('1.3', 2)
 > x.add(y).toString()
 '2.00'
 > y.sub(5).toString()
@@ -136,8 +143,8 @@ Absolute value:
 > y = new Decnum(-91, 2)
 > y.abs().toString()
 91.00
- 
-Checking if it's zero:
+
+Checking if number is zero:
 
 > x = new Decnum(0, 1)
 > x.isZero()
@@ -154,4 +161,3 @@ Tests
     nodeunit tests/test.js
 
 The tests are generated automatically to avoid assumptions.
-

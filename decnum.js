@@ -1,4 +1,4 @@
-function Decnum(num, precision) {
+Decnum = function(num, precision) {
     //// Constructor
     var DBASE = 4,
         BASE = Math.pow(10, DBASE);
@@ -46,7 +46,6 @@ function Decnum(num, precision) {
         this._digits = new Array(fractional_len + integer_len);
 
         for (var i = fractional_s.length; i >= DBASE; i -= DBASE) {
-            // digits.push(parseInt(fractional_s.slice(i - DBASE, i), 10));
             this._digits[ind] = parseInt(fractional_s.slice(i - DBASE, i), 10);
             ind++;
             if (ind == this._float) break;
@@ -58,20 +57,13 @@ function Decnum(num, precision) {
             ind++;
         }
 
-        // // I don't think i need it 
-        // while (this._digits.length <= this._float) {
-        //     this._digits.push(0);
-        // }
-
         this._positive = num >= 0 ;
     }
 
 
     if (this._precision > 0 && (0 != this._precision % this.DBASE)) {
-        this._digits[0] = this._digits[0] - (this._digits[0] % Math.pow(10, this.DBASE - this._precision % this.DBASE));
+        this._digits[0] -= (this._digits[0] % Math.pow(10, this.DBASE - this._precision % this.DBASE));
     }
-
-
 };
 //// Arithmetics
 Decnum.prototype.add = function(x) {
@@ -112,7 +104,6 @@ Decnum.prototype.add = function(x) {
 };
 Decnum.prototype.sub = function (x) {
     // Non-destructive subtraction operation
-
     x = this.coerce_num(x);
 
     // Some subtractions are easier to do as additions
@@ -177,7 +168,6 @@ Decnum.prototype.sub = function (x) {
 };
 Decnum.prototype.mul = function (x) {
     // Non-destructive multiplication
-
     x = this.coerce_num(x);
 
     var c = new Decnum(0, this._precision);
@@ -197,13 +187,12 @@ Decnum.prototype.mul = function (x) {
     // Make sure precision didn't 'increase'
 
     if (c._precision > 0 && (0 != (c._precision % c.DBASE))) {
-        c._digits[0] = c._digits[0] - (c._digits[0] % Math.pow(10, c.DBASE - c._precision % c.DBASE));
+        c._digits[0] -= (c._digits[0] % Math.pow(10, c.DBASE - c._precision % c.DBASE));
     }
     return c;
 };
 Decnum.prototype.mod = function (x) {
     // Non-destructive modulo operations
-
     x = this.coerce_num(x);
 
     return this.sub(this.div(x).intPart().mul(x));
@@ -211,7 +200,6 @@ Decnum.prototype.mod = function (x) {
 
 Decnum.prototype.div = function (x) {
     // Non-destructive division operation
-
     x = this.coerce_num(x);
 
     if (x.isZero()) {
@@ -223,8 +211,7 @@ Decnum.prototype.div = function (x) {
     // Find precision
     var new_precision = x._digits.length,
     divsor = new Decnum(0, 0),
-    divend = new Decnum(0, 0),
-    div_digits = [];
+    divend = new Decnum(0, 0);
     divsor._digits = [];
     divend._digits = [];
     divsor._positive = true;
@@ -239,17 +226,20 @@ Decnum.prototype.div = function (x) {
         divsor._digits.pop();
     }
 
+    var div_digits = new Array(divsor._digits.length + 1 + this._digits.length);
+
     // Add some zeroes for precision. +1 should be here
     for (var i = 0; i < divsor._digits.length + 1; i++) {
-        div_digits.push(0);
+        div_digits[i] = 0;
     }
 
-    for (var i = 0; i < this._digits.length; i++) {
-        div_digits.push(this._digits[i]);
+    for (var i = divsor._digits.length + 1, j = 0; i < this._digits.length + divsor._digits.length + 1; i++, j++) {
+        div_digits[i] = this._digits[j];
     }
 
-    for (var i = div_digits.length - divsor._digits.length; i < div_digits.length; i++) {
-        divend._digits.push(div_digits[i]);
+    divend._digits = new Array(divsor._digits.length);
+    for (var i = div_digits.length - divsor._digits.length, j = 0; i < div_digits.length; i++, j++) {
+        divend._digits[j] = (div_digits[i]);
     }
 
     for (var i = 0; i < divsor._digits.length; i++) {
@@ -276,9 +266,9 @@ Decnum.prototype.div = function (x) {
 
     var c = new Decnum(0, this._precision);
     c._positive = (this._positive == x._positive);
-    c._digits = [];
-    for (var i = result.length - 1; i >= 0 ; i--) {
-        c._digits.push(result[i]);
+    c._digits = new Array(result.length);
+    for (var i = result.length - 1, j = 0; i >= 0 ; i--, j++) {
+        c._digits[j] = result[i];
     }
 
     var delta = this._float - divsor._digits.length;
@@ -299,7 +289,6 @@ Decnum.prototype.div = function (x) {
 
 Decnum.prototype.compare = function(x) {
     // Compare two numbers. +1 means this > x; 0 equals, -1: this < x
-
     x = this.coerce_num(x);
 
     if (this._positive != x._positive) {
@@ -326,7 +315,6 @@ Decnum.prototype.compare = function(x) {
 };
 Decnum.prototype.negate = function() {
     // Return -1 * this. Non-destructive
-
     var res = this._clone();
     res._positive = !res._positive;
     return res;
@@ -391,7 +379,10 @@ Decnum.prototype.to_string = function () {
         res = '0' + res;
     }
 
-    if (!this._positive && (this.compare((new Decnum(0, this._precision)).__neg()) != 0)) res = "-" + res;
+    if (!this._positive && !this.isZero()) {
+        res = "-" + res;
+    }
+
     return res;
 };
 Decnum.prototype.abs = function() {
@@ -593,9 +584,9 @@ Decnum.prototype.isZero = function() {
             return false;
         };
     }
-    
+    // Last digit may contain some garbage
     if (0 != (this._precision % this.DBASE)) {
-        return (this._digits[0] < Math.pow(10, this.DBASE - this._precision % this.DBASE));        
+        return (this._digits[0] < Math.pow(10, this.DBASE - this._precision % this.DBASE));
     }
     return (this._digits[0] == 0);
 };
