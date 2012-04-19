@@ -127,10 +127,23 @@ describe('Arithmetic properties', function() {
             left = randomNumber(precision);
             right = randomNumber(precision);
             expected = left / right;
-            expect(new nm.Decnum(left, precision)
-                   .div(new nm.Decnum(right, precision))
-                   .valueOf())
-                .toBeCloseToFloat(expected);
+            left = new nm.Decnum(left, precision);
+            right = new nm.Decnum(right, precision);
+            if (right.isZero()) {
+                expect(function () {
+                    left.div(right);
+                }).toThrow('Division by 0');
+            } else {
+                expect(left.div(right).valueOf()).toBeCloseToFloat(expected);
+            }
         }
+    });
+
+    it('Throws division by zero', function() {
+        var left = new nm.Decnum(1),
+            right = new nm.Decnum(0);
+        expect(function () {
+            return left.div(right);
+        }).toThrow('Division by 0');
     });
 });
