@@ -203,8 +203,6 @@ Decnum.prototype.div = function (x) {
     x = this.coerce_num(x);
 
     if (x.isZero()) {
-        console.log([this, x]);
-        console.log([this.toString(), x.toString()]);
         throw new Error("Division by 0");
     }
 
