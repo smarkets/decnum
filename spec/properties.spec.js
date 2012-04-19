@@ -10,8 +10,9 @@ describe('Arithmetic properties', function() {
     beforeEach(function () {
         this.addMatchers({
             toBeCloseToFloat: function (expected, epsilon) {
-                if (typeof epsilon === 'undefined')
+                if (typeof epsilon === 'undefined') {
                     epsilon = 0.01;
+                }
                 return Math.abs(parseFloat(this.actual) - parseFloat(expected)) < epsilon;
             }
         });
@@ -19,8 +20,9 @@ describe('Arithmetic properties', function() {
 
     var randomNumber = function (precision) {
         var a = (Math.random() - 0.5) * Math.pow(10, 4);
-        if (typeof precision === 'undefined')
+        if (typeof precision === 'undefined') {
             return a;
+        }
         return Math.round(a * precision) / precision;
     };
 
@@ -30,7 +32,7 @@ describe('Arithmetic properties', function() {
             expected,
             result;
         expect(numTests).toBeGreaterThan(0);
-        for (i = 0; i < numTests; i++) {
+        for (i = 0; i < numTests; i += 1) {
             expected = randomNumber(precision);
             result = new nm.Decnum(expected, precision);
             expect(result.valueOf()).toBeCloseToFloat(expected);
@@ -44,14 +46,16 @@ describe('Arithmetic properties', function() {
             left,
             right;
         expect(numTests).toBeGreaterThan(0);
-        for (i = 0; i < numTests; i++) {
+        for (i = 0; i < numTests; i += 1) {
             left = randomNumber(precision);
             right = randomNumber(precision);
             expected = 0;
-            if (left < right)
+            if (left < right) {
                 expected = -1;
-            if (right < left)
+            }
+            if (right < left) {
                 expected = 1;
+            }
             left = new nm.Decnum(left, precision);
             right = new nm.Decnum(right, precision);
             expect(left.compare(right)).toBe(expected);
@@ -65,7 +69,7 @@ describe('Arithmetic properties', function() {
             left,
             right;
         expect(numTests).toBeGreaterThan(0);
-        for (i = 0; i < numTests; i++) {
+        for (i = 0; i < numTests; i += 1) {
             left = randomNumber(precision);
             right = randomNumber(precision);
             expected = left + right;
@@ -83,7 +87,7 @@ describe('Arithmetic properties', function() {
             left,
             right;
         expect(numTests).toBeGreaterThan(0);
-        for (i = 0; i < numTests; i++) {
+        for (i = 0; i < numTests; i += 1) {
             left = randomNumber(precision);
             right = randomNumber(precision);
             expected = left - right;
@@ -101,7 +105,7 @@ describe('Arithmetic properties', function() {
             left,
             right;
         expect(numTests).toBeGreaterThan(0);
-        for (i = 0; i < numTests; i++) {
+        for (i = 0; i < numTests; i += 1) {
             left = randomNumber(precision);
             right = randomNumber(precision);
             expected = left * right;
@@ -119,7 +123,7 @@ describe('Arithmetic properties', function() {
             left,
             right;
         expect(numTests).toBeGreaterThan(0);
-        for (i = 0; i < numTests; i++) {
+        for (i = 0; i < numTests; i += 1) {
             left = randomNumber(precision);
             right = randomNumber(precision);
             expected = left / right;
