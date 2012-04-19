@@ -289,10 +289,20 @@ Decnum.prototype.compare = function(x) {
     // Compare two numbers. +1 means this > x; 0 equals, -1: this < x
     x = this.coerce_num(x);
 
-    if (this._positive != x._positive) {
+    if (this.isZero()) {
+        if (x.isZero()) {
+            return 0;
+        }
+        return x._positive ? -1 : 1;
+    }
+
+    if (x.isZero()) {
         return this._positive ? 1 : -1;
     }
 
+    if (this._positive !== x._positive) {
+        return this._positive ? 1 : -1;
+    }
 
     var res = 0;
 
