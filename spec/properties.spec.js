@@ -2,7 +2,7 @@
 /*jslint white: true, vars: true */
 var nm = require('../decnum');
 
-describe('Arithmetic properties', function() {
+describe('Arithmetic properties', function () {
     "use strict";
 
     var numTests = 10000;
@@ -139,11 +139,79 @@ describe('Arithmetic properties', function() {
         }
     });
 
-    it('Throws division by zero', function() {
+    it('Throws division by zero', function () {
         var left = new nm.Decnum(1),
             right = new nm.Decnum(0);
         expect(function () {
             return left.div(right);
         }).toThrow('Division by 0');
+    });
+
+    it('Can perform -0.7500 % -279.0000', function () {
+        var precision = 4,
+            left = new nm.Decnum('-0.7500', precision),
+            right = new nm.Decnum('-279.0000', precision);
+        expect(left.mod(right).valueOf()).toBeCloseToFloat(-0.75);
+    });
+
+    it('Can perform modulo operations', function () {
+        var precision = 4,
+            i,
+            expected,
+            left,
+            right;
+        expect(numTests).toBeGreaterThan(0);
+        for (i = 0; i < numTests; i += 1) {
+            left = randomNumber(precision);
+            right = randomNumber(precision);
+            expected = left % right;
+            left = new nm.Decnum(left, precision);
+            right = new nm.Decnum(right, precision);
+            if (right.isZero()) {
+                expect(function () {
+                    left.mod(right);
+                }).toThrow('Division by 0');
+            } else {
+                expect(left.mod(right).valueOf())
+                    .toBeCloseToFloat(expected);
+            }
+        }
+    });
+
+    it('Can compare "negative zero"', function () {
+        var badZero = new Decnum(0);
+        badZero._digits = [0, 0];
+        badZero._positive = false;
+        expect(badZero.compare(new Decnum('-1.23'))).toBe(1);
+        expect(badZero.compare(new Decnum('1.23'))).toBe(-1);
+        expect(badZero.compare(new Decnum(0))).toBe(0);
+        expect(new Decnum('-0.75').compare(badZero)).toBe(-1);
+        expect(new Decnum('0.75').compare(badZero)).toBe(1);
+        expect(new Decnum(0).compare(badZero)).toBe(0);
+    });
+
+    it('Can compare numbers', function () {
+        var precision = 4,
+            i,
+            expected,
+            left,
+            right;
+        expect(numTests).toBeGreaterThan(0);
+        for (i = 0; i < numTests; i += 1) {
+            left = randomNumber(precision);
+            right = randomNumber(precision);
+            if (left === right) {
+                expected = 0;
+            }
+            if (left > right) {
+                expected = 1;
+            }
+            if (right > left) {
+                expected = -1;
+            }
+            left = new nm.Decnum(left, precision);
+            right = new nm.Decnum(right, precision);
+            expect(left.compare(right)).toBe(expected);
+        }
     });
 });
