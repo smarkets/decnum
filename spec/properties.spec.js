@@ -214,4 +214,18 @@ describe('Arithmetic properties', function () {
             expect(left.compare(right)).toBe(expected);
         }
     });
+
+    it('Can negate numbers', function () {
+        var precision = 4,
+            i,
+            expected,
+            left,
+            leftDecimal;
+        expect(numTests).toBeGreaterThan(0);
+        for (i = 0; i < numTests; i += 1) {
+            left = randomNumber(precision);
+            leftDecimal = new nm.Decnum(left, precision);
+            expect(leftDecimal.negate()).toBeCloseToFloat(left * -1);
+        }
+    });
 });
