@@ -1,9 +1,12 @@
 {
-  "private":true,
-  "name":"decnum",
+  "private": true,
+  "name": "decnum",
   "version": "1.0.0",
-  "description":"Pure-Javascript library for handling large integers with arbitrary precision.",
+  "description": "Pure-Javascript library for handling large integers with arbitrary precision.",
+  "scripts": {
+      "test": "jasmine-node --junitreport ./spec/"
+  },
   "devDependencies": {
-    "nodeunit":"*"
+    "jasmine-node": "*"
   }
 }
