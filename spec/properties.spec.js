@@ -228,4 +228,21 @@ describe('Arithmetic properties', function () {
             expect(leftDecimal.negate()).toBeCloseToFloat(left * -1);
         }
     });
+
+    it('Can subtract small numbers', function () {
+        var a = new nm.Decnum('0.2', 8);
+        a._digits.push(0);
+        var b = new nm.Decnum('0.5', 8);
+        expect(a.sub(b)).toBeCloseToFloat(-0.3);
+    });
+
+    it('Can compare numbers with different floats', function () {
+        var a = new nm.Decnum('0.3', 8);
+        var b = new nm.Decnum('0.3', 8);
+        expect(a.compare(b)).toBe(0);
+        b._float = 1;  // b becomes 3000.0
+        // Compare 0.3 to 3000.0
+        expect(a.compare(b)).toBe(-1);
+        expect(b.compare(a)).toBe(1);
+    });
 });
