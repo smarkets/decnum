@@ -289,6 +289,21 @@ Decnum.prototype.compare = function(x) {
     // Compare two numbers. +1 means this > x; 0 equals, -1: this < x
     x = this.coerce_num(x);
 
+    var newFloat = Math.max(this._float, x._float);
+
+    for (var i = 0; i < (newFloat - this._float); i++)
+        this._digits.unshift(0);
+    for (var i = 0; i < (newFloat - x._float); i++)
+        x._digits.unshift(0);
+
+    this._float = newFloat;
+    x._float = newFloat;
+
+    while (this._digits.length > 1 && this._digits[this._digits.length - 1] == 0)
+        this._digits.pop();
+    while (x._digits.length > 1 && x._digits[x._digits.length - 1] == 0)
+        x._digits.pop();
+
     if (this.isZero()) {
         if (x.isZero()) {
             return 0;
