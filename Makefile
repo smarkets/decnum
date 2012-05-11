@@ -16,3 +16,6 @@ ${DEPS}:
 # remove installed modules
 distclean:
 	rm -rf ./node_modules
+
+github:
+	git push github github-master:master
